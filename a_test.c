@@ -9,8 +9,12 @@ main(int argc, char *argv[])
     
     char * test[10];
     int i;
-    for (i=0; i<10; i++)
+    for (i=0; i<10; i++) {
+
         test[i] = (char *) malloc( (i+1) * 10 );
+
+        free( test[i] );
+    }
 
     test[0] = (char *) malloc( 10 );
     test[1] = (char *) malloc( 40 );
@@ -33,5 +37,7 @@ main(int argc, char *argv[])
     free( test[7] );
     free( test[8] );
     free( test[9] );
+
+    return 0;
 }
 
