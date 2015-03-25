@@ -1,5 +1,11 @@
 # A GNU libc interceptor via RTLD-Audit 
 
+# WIP
+
+This project is a *work in progress*. The implementation is *incomplete* and subject to change. The documentation can be inaccurate.
+
+# Description
+
 A GNU GLibc Audit shared-library for Linux using the RTLD-Audit mechanism in GLibc.
 
 To see `make` targets, run
