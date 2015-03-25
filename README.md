@@ -47,3 +47,7 @@ register `RDI`, with value `RDI=10240` in the above line, so the call was
 http://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI 
 for the passing of parameters directly through the CPU registers in GCC in Linux.)
 
+To see `make` targets, run
+
+      make help
+
