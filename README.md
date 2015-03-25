@@ -32,6 +32,10 @@ see how the audit library reports it. You could use:
      export LD_LIBRARY_PATH=`pwd`
      LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
 
+or alternatively:
+
+     make  run_a_test
+
 and you will see some lines like:
 
      1427243201.652328: Calling symbol malloc from address 4006a0 ... (RDI=10240, RSI=0, RDX=11725120, RCX=11725120...
