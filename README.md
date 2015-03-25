@@ -2,7 +2,11 @@
 
 A GNU GLibc Audit shared-library for Linux using the RTLD-Audit mechanism in GLibc.
 
-Much of this information is in:
+To see `make` targets, run
+
+      make help
+
+Much of the information on the GNU GLibc Audit is in:
 
      /usr/include/link.h
      /usr/include/bits/link.h
@@ -46,8 +50,4 @@ register `RDI`, with value `RDI=10240` in the above line, so the call was
 `malloc(10240)`. See 
 http://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI 
 for the passing of parameters directly through the CPU registers in GCC in Linux.)
-
-To see `make` targets, run
-
-      make help
 
