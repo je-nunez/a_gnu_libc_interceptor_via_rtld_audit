@@ -30,7 +30,7 @@ la_objopen(struct link_map *__map, Lmid_t __lmid, uintptr_t *__cookie)
             (__lmid == LM_ID_BASE) ?  "Link map is part of the initial namespace" :
             (__lmid == LM_ID_NEWLM) ? "Link map is part of a new namespace requested via dlmopen" :
             "???",
-            __cookie);
+            (unsigned long int) __cookie);
 
   /* request to audit symbols in this object, and external symbols referenced 
    * from this object. */
@@ -44,7 +44,7 @@ la_objclose(uintptr_t *cookie)
   gettimeofday(&tp, NULL);
 
   printf("%lu.%06lu: Closing object with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, *cookie);
+         tp.tv_sec, tp.tv_usec, (unsigned long int) cookie);
   return (0);
 }
 
@@ -55,7 +55,7 @@ la_preinit(uintptr_t *cookie)
   gettimeofday(&tp, NULL);
 
   printf("%lu.%06lu: Before calling main() with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, *cookie);
+         tp.tv_sec, tp.tv_usec, (unsigned long int) cookie);
 }
 
 
@@ -66,7 +66,7 @@ la_objsearch(const char *__name, uintptr_t *__cookie, unsigned int __flag)
   gettimeofday(&tp, NULL);
 
   printf("%lu.%06lu: Searching for %s with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, __name, *__cookie);
+         tp.tv_sec, tp.tv_usec, __name, (unsigned long int) __cookie);
 
   /* From man page of rtld-audit(7):
    *
@@ -92,7 +92,8 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
   printf("%lu.%06lu: la_symbind64(): symname = %s; sym->st_value = %p",
          tp.tv_sec, tp.tv_usec, __symname, (void *)__sym->st_value);
   printf("        ndx = %d; flags = 0x%x", __ndx, *__flags);
-  printf("; caller-cook = %lx; callee-cook = %lx\n", __refcook, __defcook);
+  printf("; caller-cook = %lx; callee-cook = %lx\n", 
+	 (unsigned long int) __refcook, (unsigned long int) __defcook);
 
   /*
    * For debug: don't trace calls to, or returns from, this symbol: 
@@ -130,7 +131,7 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym,
   printf("%lu.%06lu: Calling symbol %s from address %lx" 
          " in object with cookie %lx defined in object with cookie %lx", 
          tp.tv_sec, tp.tv_usec, __symname, return_address_to_callee, 
-         *__refcook, *__defcook);
+         (unsigned long int) __refcook, (unsigned long int) __defcook);
 
   /* Print x86-64 registers 
    *     The first six integer or pointer arguments are passed in registers 
@@ -162,8 +163,8 @@ la_x86_64_gnu_pltexit(Elf64_Sym *__sym,
   gettimeofday(&tp, NULL);
 
   printf("%lu.%06lu: Returning from symbol %s from object with cookie %lx"
-         " in object with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, symname, *__refcook, *__defcook);
+         " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec, symname, 
+	 (unsigned long int) __refcook, (unsigned long int) __defcook);
   return (0);
 }
 
