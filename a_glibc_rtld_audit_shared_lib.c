@@ -7,10 +7,24 @@
 #include <stdio.h>
 #include <link.h>
 #include <elf.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
-
+#include <sys/types.h>
 
  
+static pid_t
+__gettid(void)
+{
+  /* returns the kthread id or pid() if no kthread */
+  /* uses the system-call to get the underlying 
+   * kthread() to this user-land execution thread */
+  pid_t tid;
+  tid = syscall(SYS_gettid);
+  return tid;
+}
+
+
 extern unsigned int
 la_version(unsigned int version)
 {
@@ -23,9 +37,10 @@ la_objopen(struct link_map *__map, Lmid_t __lmid, uintptr_t *__cookie)
 
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: la_objopen(): loading \"%s\"; lmid = %s; cookie=%lx\n",
-            tp.tv_sec, tp.tv_usec, 
+  printf("%lu.%06lu: %d: la_objopen(): loading \"%s\"; lmid = %s; cookie=%lx\n",
+            tp.tv_sec, tp.tv_usec, kernel_thread_id,
             (__map->l_name[0] != '\0') ? __map->l_name : "MAIN-APPLIC",
             (__lmid == LM_ID_BASE) ?  "Link map is part of the initial namespace" :
             (__lmid == LM_ID_NEWLM) ? "Link map is part of a new namespace requested via dlmopen" :
@@ -42,9 +57,10 @@ la_objclose(uintptr_t *cookie)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: Closing object with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, (unsigned long int) cookie);
+  printf("%lu.%06lu: %d: Closing object with cookie %lx\n", 
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, (unsigned long int) cookie);
   return (0);
 }
 
@@ -53,9 +69,10 @@ la_preinit(uintptr_t *cookie)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: Before calling main() with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, (unsigned long int) cookie);
+  printf("%lu.%06lu: %d: Before calling main() with cookie %lx\n", 
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, (unsigned long int) cookie);
 }
 
 
@@ -64,9 +81,11 @@ la_objsearch(const char *__name, uintptr_t *__cookie, unsigned int __flag)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: Searching for %s with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, __name, (unsigned long int) __cookie);
+  printf("%lu.%06lu: %d: Searching for %s with cookie %lx\n", 
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __name, 
+         (unsigned long int) __cookie);
 
   /* From man page of rtld-audit(7):
    *
@@ -88,9 +107,11 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: la_symbind64(): symname = %s; sym->st_value = %p",
-         tp.tv_sec, tp.tv_usec, __symname, (void *)__sym->st_value);
+  printf("%lu.%06lu: %d: la_symbind64(): symname = %s; sym->st_value = %p",
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname, 
+         (void *)__sym->st_value);
   printf("        ndx = %d; flags = 0x%x", __ndx, *__flags);
   printf("; caller-cook = %lx; callee-cook = %lx\n", 
 	 (unsigned long int) __refcook, (unsigned long int) __defcook);
@@ -113,25 +134,23 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
 
 
 extern Elf64_Addr 
-la_x86_64_gnu_pltenter(Elf64_Sym *__sym,
-                                          unsigned int __ndx,
-                                          uintptr_t *__refcook,
-                                          uintptr_t *__defcook,
-                                          La_x86_64_regs *__regs,
-                                          unsigned int *__flags,
-                                          const char *__symname,
-                                          long int *__framesizep)
+la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
+                       uintptr_t *__refcook, uintptr_t *__defcook,
+                       La_x86_64_regs *__regs, unsigned int *__flags,
+                       const char *__symname, long int *__framesizep)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
   uint64_t register_x86_64_stack_pointer = __regs->lr_rsp; 
   uint64_t return_address_to_callee = (* (uint64_t *)register_x86_64_stack_pointer);
 
-  printf("%lu.%06lu: Calling symbol %s from address %lx" 
+  printf("%lu.%06lu: %d: Calling symbol %s from address %lx" 
          " in object with cookie %lx defined in object with cookie %lx", 
-         tp.tv_sec, tp.tv_usec, __symname, return_address_to_callee, 
-         (unsigned long int) __refcook, (unsigned long int) __defcook);
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname, 
+         return_address_to_callee, (unsigned long int) __refcook, 
+         (unsigned long int) __defcook);
 
   /* Print x86-64 registers 
    *     The first six integer or pointer arguments are passed in registers 
@@ -151,19 +170,18 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym,
 
 
 extern unsigned int 
-la_x86_64_gnu_pltexit(Elf64_Sym *__sym,
-                                           unsigned int __ndx,
-                                           uintptr_t *__refcook,
-                                           uintptr_t *__defcook,
-                                           const La_x86_64_regs *__inregs,
-                                           La_x86_64_retval *__outregs,
-                                           const char *symname)
+la_x86_64_gnu_pltexit(Elf64_Sym *__sym, unsigned int __ndx,
+                      uintptr_t *__refcook, uintptr_t *__defcook,
+                      const La_x86_64_regs *__inregs, 
+                      La_x86_64_retval *__outregs, const char *symname)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
+  pid_t kernel_thread_id = __gettid();  
 
-  printf("%lu.%06lu: Returning from symbol %s from object with cookie %lx"
-         " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec, symname, 
+  printf("%lu.%06lu: %d: Returning from symbol %s from object with cookie %lx"
+         " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec, 
+         kernel_thread_id, symname, 
 	 (unsigned long int) __refcook, (unsigned long int) __defcook);
   return (0);
 }

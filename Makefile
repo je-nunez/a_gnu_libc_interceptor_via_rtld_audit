@@ -38,6 +38,5 @@ clean:
 
 
 run_a_test: a_test   liba_glibc_rtld_audit_shared_lib.so.1.0.1
-	export LD_LIBRARY_PATH=`pwd`
-	LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
+	LD_LIBRARY_PATH=`pwd` LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
      

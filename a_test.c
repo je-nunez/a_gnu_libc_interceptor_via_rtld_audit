@@ -1,12 +1,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+
 
 int
 main(int argc, char *argv[])
 {
-    printf("In main\n");
-    
+    pid_t curr_pid = getpid();
+    printf("Entering main with pid=%d\n", curr_pid);
+
     char * test[10];
     int i;
     for (i=0; i<10; i++) {
