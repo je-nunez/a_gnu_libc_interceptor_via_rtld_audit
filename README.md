@@ -57,5 +57,5 @@ the register `RDI`, with value `RDI=10240` in the above line, so the call was
 http://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI 
 on the passing of the actual arguments in a function call preferently through 
 the CPU registers directly, and not through the stack, in Linux -and other 
- Unix-es.)
+Unix-like O.S.)
 
