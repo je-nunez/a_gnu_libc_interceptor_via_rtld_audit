@@ -51,9 +51,11 @@ and you will see some lines like:
      1427243201.652328: Calling symbol malloc from address 4006a0 ... (RDI=10240, RSI=0, RDX=11725120, RCX=11725120...
 
 where RDI, RSI, are the values of the CPU registers in the call to `malloc` above 
-(e.g. in the above call to `malloc()`, the requested amount of memory is set in the
-register `RDI`, with value `RDI=10240` in the above line, so the call was 
+(e.g. in the above call to `malloc()`, the requested amount of memory is set in 
+the register `RDI`, with value `RDI=10240` in the above line, so the call was 
 `malloc(10240)`. See 
 http://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI 
-for the passing of parameters directly through the CPU registers in GCC in Linux.)
+on the passing of the actual arguments in a function call preferently through 
+the CPU registers directly, and not through the stack, in Linux -and other 
+ Unix-es.)
 
