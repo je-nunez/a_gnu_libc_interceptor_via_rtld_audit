@@ -15,6 +15,8 @@ help:
 	echo -e "         Build the test program to the current directory.\n"	
 	echo "    make run_a_test"	
 	echo -e "         Build the both above -if necessary- and run a glibc audit on the test program.\n"	
+	echo "    make run_a_test_low_level"	
+	echo -e "         Similar to 'run_a_test' but also debug how the std dynamic-linker is binding symbols\n"	
 	echo "    make clean"	
 	echo -e "         Remove compiled and binary-object files.\n"	
 	echo "    make help"	
@@ -36,7 +38,10 @@ a_test: a_test.c
 clean:
 	-rm -f a_test  a_test.o  a_glibc_rtld_audit_shared_lib.o   liba_glibc_rtld_audit_shared_lib.so.1.0.1
 
-
 run_a_test: a_test   liba_glibc_rtld_audit_shared_lib.so.1.0.1
 	LD_LIBRARY_PATH=`pwd` LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
-     
+
+
+run_a_test_low_level: a_test   liba_glibc_rtld_audit_shared_lib.so.1.0.1
+	LD_LIBRARY_PATH=`pwd` LD_DEBUG=all LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
+
