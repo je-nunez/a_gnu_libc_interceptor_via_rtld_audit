@@ -13,9 +13,10 @@ To see `make` targets, run
       make help
 
 Much of the information about the GNU GLibc Audit is inside the source code for 
-its dynamic loader at dlopen() time, rtld.c:
+its dynamic loader at dlopen() time, `rtld.c`:
 
      https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/rtld.c#l1335
+         
         ...
          // Follow the usage of audit_iface_names[] inside rtld.c for Audit API
          
@@ -26,9 +27,11 @@ its dynamic loader at dlopen() time, rtld.c:
                      ...
 
 which prepares for the use of the Glibc Audit inside the runtime-linker; and
-inside the code of the dynamic-symbol actual usage (auditing) during execution:
+inside the code of the dynamic-symbol actual usage (auditing) during execution,
+`dl-runtime.c`:
 
      https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/dl-runtime.c#l383
+         
        ...
        /* Follow the usage of the ARCH_LA_PLT* macros, which in turn are defined
         * in the directory <glibc-source-code>/sysdeps/ which each architecture
@@ -37,8 +40,7 @@ inside the code of the dynamic-symbol actual usage (auditing) during execution:
         * E.g., this code in dl-runtime.c audits the "entrance" (calling) into
         * symbol "sym" in glibc:
         */
-        
-                = afct->ARCH_LA_PLTENTER (&sym, reloc_result->boundndx,
+        ...  afct->ARCH_LA_PLTENTER (&sym, reloc_result->boundndx,
                                            ...
         
 
