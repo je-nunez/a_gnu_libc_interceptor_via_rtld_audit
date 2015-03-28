@@ -12,13 +12,44 @@ To see `make` targets, run
 
       make help
 
-Much of the information on the GNU GLibc Audit is in:
+Much of the information about the GNU GLibc Audit is inside the source code for 
+its dynamic loader at dlopen() time, rtld.c:
+
+     https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/rtld.c#l1335
+        ...
+         // Follow the usage of audit_iface_names[] inside rtld.c for Audit API
+         
+         static const char audit_iface_names[] =
+                     "la_activity\0"
+                     "la_objsearch\0"
+                     "la_objopen\0"
+                     ...
+
+which prepares for the use of the Glibc Audit inside the runtime-linker; and
+inside the code of the dynamic-symbol actual usage (auditing) during execution:
+
+     https://sourceware.org/git/?p=glibc.git;a=blob;f=elf/dl-runtime.c#l383
+       ...
+       /* Follow the usage of the ARCH_LA_PLT* macros, which in turn are defined
+        * in the directory <glibc-source-code>/sysdeps/ which each architecture
+        * where GLibc has been ported.
+        * 
+        * E.g., this code in dl-runtime.c audits the "entrance" (calling) into
+        * symbol "sym" in glibc:
+        */
+        
+                = afct->ARCH_LA_PLTENTER (&sym, reloc_result->boundndx,
+                                           ...
+        
+
+which defines the actual use of the Glibc Audit inside the runtime-linker. Also,
+the interfaces for this mechanism,
 
      /usr/include/link.h
      /usr/include/bits/link.h
 
-and also in the `rtld-audit(7)` man page. E.g., below the comment in 
-`/usr/include/link.h`:
+and the documentation in the `rtld-audit(7)` man page. E.g., below the comment 
+in `/usr/include/link.h`:
 
      /* Prototypes for the ld.so auditing interfaces.  These are not
        defined anywhere in ld.so but instead have to be provided by the
