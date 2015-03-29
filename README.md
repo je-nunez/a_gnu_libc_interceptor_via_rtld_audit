@@ -40,7 +40,7 @@ inside the code of the dynamic-symbol actual usage (auditing) during execution,
         * 
         * for each architecture where GLibc has been ported to.
         * 
-        * E.g., this code in elf/dl-runtime.c audits the "entrance" (calling) 
+        * E.g., this code in ./elf/dl-runtime.c audits the "entrance" (calling) 
         * into the symbol "sym" in glibc:
         */
         ...  afct->ARCH_LA_PLTENTER (&sym, reloc_result->boundndx,
