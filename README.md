@@ -34,11 +34,14 @@ inside the code of the dynamic-symbol actual usage (auditing) during execution,
          
        ...
        /* Follow the usage of the ARCH_LA_PLT* macros, which in turn are defined
-        * in the directory <glibc-source-code>/sysdeps/ which each architecture
-        * where GLibc has been ported.
+        * in the header file:
         * 
-        * E.g., this code in dl-runtime.c audits the "entrance" (calling) into
-        * symbol "sym" in glibc:
+        *    <glibc-source-code>/sysdeps/<mach-architecture>/dl-machine.h
+        * 
+        * for each architecture where GLibc has been ported to.
+        * 
+        * E.g., this code in elf/dl-runtime.c audits the "entrance" (calling) 
+        * into the symbol "sym" in glibc:
         */
         ...  afct->ARCH_LA_PLTENTER (&sym, reloc_result->boundndx,
                                            ...
