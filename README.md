@@ -95,7 +95,7 @@ on the passing of the actual arguments in a function call preferently through
 the CPU registers directly, avoiding if possible the stack, in Linux -and other 
 Unix-like O.S.)
 
-# Current State of Pending things
+# Tracking Pending things
 
 Trying to catch a logical bug in la_x86_64_gnu_pltexit(...) that is preventing 
 its execution. la_symbind64(...) seems to prepare for la_x86_64_gnu_pltexit(...)
