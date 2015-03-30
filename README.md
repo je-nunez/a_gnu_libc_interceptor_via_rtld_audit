@@ -101,7 +101,8 @@ Trying to catch a logical bug in la_x86_64_gnu_pltexit(...) that is preventing
 its execution. la_symbind64(...) seems to prepare for la_x86_64_gnu_pltexit(...)
 to prepare for la_x86_64_gnu_pltexit(...) to be called (as la_x86_64_gnu_pltenter(...) 
 is indeed invoked before each call, and both *_gnu_pltenter() and *_gnu_pltexit()
-are expected to be orthogonal, if la_symbind64(...) requests them so).
+are expected to be quite orthogonal if la_symbind64(...) requests that they both be
+invoked).
 
 Read also the code around glibc's elf/dl-runtime.c
 
@@ -111,5 +112,7 @@ to see what is happening with the above invocation, and opened a bug:
 
       https://sourceware.org/bugzilla/show_bug.cgi?id=18177
 
-but this bug seems to be unrelated to my logical bug that I'm still investigating.
+(other people has appended more details on the LD_AUDIT implementation in 
+dl-runtime.c) but this bug seems to be unrelated to my logical bug that I'm still
+investigating here.
 
