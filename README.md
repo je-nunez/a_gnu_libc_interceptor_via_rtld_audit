@@ -95,6 +95,20 @@ on the passing of the actual arguments in a function call preferently through
 the CPU registers directly, avoiding if possible the stack, in Linux -and other 
 Unix-like O.S.)
 
+# Pre-requisites
+
+The `stack-backtrace` of the caller-procedures uses the `libunwind` shared library,
+so this one needs to be installed in order to run. This is commonly available via
+your package manager, eg., for RedHat and Debian:
+
+        RedHat:
+        
+             yum install libunwind
+         
+	Debian:
+        
+             apt-get install libunwind
+
 # Tracking Pending things
 
 Trying to catch a logical bug in `la_x86_64_gnu_pltexit(...)` that is preventing 
@@ -151,11 +165,11 @@ Another option for the stack-trace would be to use the `DynInst`'s `StackWalkerA
      http://www.dyninst.org/sites/default/files/manuals/dyninst/StackwalkerAPI.pdf
 
 This stack-trace is in-core, for this shared-library runs under the same thread
-and in the same memory space of the thread/process it is tracing, not an external
-thread/process, so `libunwind-ptrace` (used by `strace`, `gdb`, and `ltrace`) 
-seems to be too heavy-weight for this `same thread, same memory space` case, for
-it uses the `ptrace` system-call and allows to backtrace externals `thread-ids`
--and it stops the external thread, etc:
+and in the same local memory space of the thread/process it is tracing, not an 
+external thread/process, so `libunwind-ptrace` (used by `strace`, `gdb`, and 
+`ltrace`) seems to be too heavy-weight for this `same thread, same local memory
+space` case, for it uses the `ptrace` system-call and allows to backtrace 
+externals `thread-ids` -and it stops the external thread, etc:
 
      libunwind-ptrace:
      
