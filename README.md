@@ -116,3 +116,38 @@ to see what is happening with the above invocation, and opened a bug:
 dl-runtime.c) but this bug seems to be unrelated to my logical bug 
 described in the first paragraph that I'm still investigating here.
 
+In the stack-backtrace of the caller-procedures, the unwind of the caller stack
+is being done and shown on the caller stack of the Linux dynamic loader. This 
+stack-backtrace has to fixed on the caller stack in `glibc` itself up to `main()`.
+(It is using `libunwind`, not the default glibc `backtrace` because it is not 
+Posix safe -namely, it is `AS-Unsafe init heap dlopen plugin lock` in the context 
+where this tracer needs to use:
+
+     libunwind:
+     
+         http://www.nongnu.org/libunwind/man/libunwind%283%29.html
+     
+     glibc bactrace safety by context:
+     
+         http://www.gnu.org/software/libc/manual/html_node/Backtraces.html
+         http://www.gnu.org/software/libc/manual/html_node/POSIX-Safety-Concepts.html
+
+Another option for the stack-trace would be to use the `DynInst`'s `StackWalkerAPI`:
+
+     http://www.dyninst.org/sites/default/files/manuals/dyninst/StackwalkerAPI.pdf
+
+This stack-trace is in-core, for this shared-library runs under the same thread
+and in the same memory space of the thread/process it is tracing, not an external
+thread/process, so `libunwind-ptrace` (used by `strace`, `gdb`, and `ltrace`) 
+seems to be too heavy-weight for this `same thread, same memory space` case, for
+it uses the `ptrace` system-call and allows to backtrace externals `thread-ids`
+-and it stops the external thread, etc:
+
+     libunwind-ptrace:
+     
+         http://www.nongnu.org/libunwind/man/libunwind-ptrace%283%29.html
+     
+     underlying ptrace system-call:
+     
+         http://man7.org/linux/man-pages/man2/ptrace.2.html
+

@@ -12,6 +12,15 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+/* UNW_LOCAL_ONLY: Unwind caller stack-trace of local architecture only, not 
+ * cross-platform */
+
+#define UNW_LOCAL_ONLY
+
+#include <libunwind.h>
+#include <dlfcn.h>
+
+#define MAX_PROCEDURE_NAME_LENGTH  4096
  
 static pid_t
 __gettid(void)
@@ -121,6 +130,7 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
         *__flags = (LA_SYMB_NOPLTENTER | LA_SYMB_NOPLTEXIT);
    *
    */
+  *__flags = 0;
 
   /* From man page of rtld-audit(7):
    *
@@ -132,6 +142,73 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
   return __sym->st_value;
 }
 
+
+static void
+show_caller_stack_backtrace(void)
+{
+  unw_cursor_t  stack_cursor;
+  unw_context_t current_context;
+  unw_word_t    instr_ptr, stack_ptr;
+
+  char procedure_name[MAX_PROCEDURE_NAME_LENGTH];
+  unw_word_t    proced_offset_of_call ;
+  unw_proc_info_t procedure_info;
+  Dl_info symb_info;
+  const char * filename;
+  int ret;
+
+  procedure_info.unwind_info = NULL;
+  ret = unw_getcontext(&current_context);
+  if (ret) {
+      fprintf("unw_getcontext failed: %s [%d]\n", unw_strerror(ret), ret);
+      return;
+  }
+
+  ret = unw_init_local(&stack_cursor, &current_context);
+  if (ret) {
+      fprintf("unw_init_local failed: %s [%d]\n", unw_strerror(ret), ret);
+      return;
+  }
+
+  /* do the caller stack backtrace */
+  printf("     caller backtrace:\n");
+  unsigned  caller_depth = 0;
+  while (unw_step(&stack_cursor) > 0) 
+  {
+     unw_get_reg(&stack_cursor, UNW_REG_IP, &instr_ptr);
+     /* TODO: 
+      *     analysis of arguments at this stack frame &stack_cursor:
+      * 
+         unw_get_reg(&stack_cursor, UNW_REG_IP, &stack_ptr); */
+
+     ret = unw_get_proc_info(&stack_cursor, &procedure_info);
+     if (ret) {
+         printf("ERROR: unw_get_proc_info: %s [%d]\n", unw_strerror(ret), ret);
+         break;
+     }
+
+     ret = unw_get_proc_name(&stack_cursor, procedure_name, 
+			     sizeof procedure_name, &proced_offset_of_call);
+     if (ret && ret != -UNW_ENOMEM) {
+         if (ret != -UNW_EUNSPEC) printf("ERROR: unw_get_proc_name: %s [%d]\n", 
+					 unw_strerror(ret), ret);
+         procedure_name[0] = procedure_name[1] = procedure_name[2] = '?';
+         procedure_name[3] = 0;
+     }
+
+     if (dladdr((void *)(procedure_info.start_ip + proced_offset_of_call), 
+		&symb_info) && symb_info.dli_fname && *symb_info.dli_fname)
+         filename = symb_info.dli_fname;
+     else
+         filename = "???";
+
+     printf("     %d: 0x%x: %s%s+0x%x (%s)\n", caller_depth, instr_ptr, 
+	    procedure_name, ret == -UNW_ENOMEM ? "..." : "",
+	    (int)proced_offset_of_call, filename);
+     caller_depth++;
+  }
+
+}
 
 extern Elf64_Addr 
 la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
@@ -161,6 +238,8 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
          __regs->lr_rdi, __regs->lr_rsi, __regs->lr_rdx, 
          __regs->lr_rcx, __regs->lr_r8, __regs->lr_r9 );
 
+  /* Show the caller stack */
+  show_caller_stack_backtrace();
   /* From man page of rtld-audit(7):
    *
    * The return value of la_pltenter() is as for la_symbind*(). 

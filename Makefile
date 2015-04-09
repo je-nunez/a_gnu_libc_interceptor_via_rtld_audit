@@ -1,6 +1,7 @@
 
 CC = gcc
 CFLAGS = -g -Wall
+LDFLAGS = -L/usr/lib64/
 
 
 .SILENT:  help
@@ -25,11 +26,11 @@ help:
 
 liba_glibc_rtld_audit_shared_lib.so.1.0.1: a_glibc_rtld_audit_shared_lib.c
 	$(CC) -fPIC -c  $(CFLAGS) -o  a_glibc_rtld_audit_shared_lib.o  a_glibc_rtld_audit_shared_lib.c
-	$(CC) -shared -Wl,-soname,liba_glibc_rtld_audit_shared_lib.so.1 -o liba_glibc_rtld_audit_shared_lib.so.1.0.1 a_glibc_rtld_audit_shared_lib.o -lc
+	$(CC) -shared   $(LDFLAGS) -Wl,-soname,liba_glibc_rtld_audit_shared_lib.so.1 -o liba_glibc_rtld_audit_shared_lib.so.1.0.1 a_glibc_rtld_audit_shared_lib.o -lc  -ldl  -lunwind 
 
 
 a_test: a_test.c
-	$(CC)  $(CFLAGS)  -o a_test  a_test.c
+	$(CC)  $(CFLAGS)  -o $@ $^
 
 
 .PHONY : clean
