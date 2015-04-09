@@ -5,6 +5,28 @@
 #include <sys/types.h>
 
 
+
+int
+test_function_inner(char **arr, int size)
+{
+    int i;
+    for (i=0; i<size; i++) {
+
+        arr[i] = (char *) malloc((i+20) * 10);
+
+        free(arr[i]);
+    }
+    return 0;
+}
+
+
+int
+test_function_outer(char **arr, int size)
+{
+     return test_function_inner(arr, size);
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -20,27 +42,7 @@ main(int argc, char *argv[])
         free( test[i] );
     }
 
-    test[0] = (char *) malloc( 10 );
-    test[1] = (char *) malloc( 40 );
-    test[2] = (char *) malloc( 80 );
-    test[3] = (char *) malloc( 160 );
-    test[4] = (char *) malloc( 320 );
-    test[5] = (char *) malloc( 640 );
-    test[6] = (char *) malloc( 1280 );
-    test[7] = (char *) malloc( 2560 );
-    test[8] = (char *) malloc( 5120 );
-    test[9] = (char *) malloc( 10240 );
-
-    free( test[0] );
-    free( test[1] );
-    free( test[2] );
-    free( test[3] );
-    free( test[4] );
-    free( test[5] );
-    free( test[6] );
-    free( test[7] );
-    free( test[8] );
-    free( test[9] );
+    test_function_outer(test, 10);
 
     return 0;
 }

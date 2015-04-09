@@ -116,12 +116,26 @@ to see what is happening with the above invocation, and opened a bug:
 dl-runtime.c) but this bug seems to be unrelated to my logical bug 
 described in the first paragraph that I'm still investigating here.
 
-In the stack-backtrace of the caller-procedures, the unwind of the caller stack
+In the `stack-backtrace` of the caller-procedures, the unwind of the caller stack
 is being done and shown on the caller stack of the Linux dynamic loader. This 
 stack-backtrace has to fixed on the caller stack in `glibc` itself up to `main()`.
-(It is using `libunwind`, not the default glibc `backtrace` because it is not 
-Posix safe -namely, it is `AS-Unsafe init heap dlopen plugin lock` in the context 
-where this tracer needs to use:
+Ie., in the test program `a_test.c` in this repository, the stack-backtrace
+shows the procedures `la_x86_64_gnu_pltenter` (itself) and `_dl_profile_fixup`
+and `_dl_runtime_profile` beloging to the dynamic linker `/lib64/ld-linux-x86-64.so`,
+which it should really omit them (`0`, `1`, and `2`) in the stack-backtrace:
+
+     caller backtrace:
+       0: 0x92b06229: la_x86_64_gnu_pltenter+0xde (./liba_glibc_rtld_audit_shared_lib.so.1.0.1)
+       1: 0x23a0f83e: _dl_profile_fixup+0x3ce (/lib64/ld-linux-x86-64.so.2)
+       2: 0x23a16c88: _dl_runtime_profile+0x8e8 (/lib64/ld-linux-x86-64.so.2)
+       3: 0x40067f: test_function_inner+0x69 (./a_test)
+       4: 0x4006b7: test_function_outer+0x20 (./a_test)
+       5: 0x400740: main+0x87 (./a_test)
+
+(It is using `libunwind`, not the default glibc `backtrace` because the latter
+is not Posix safe in the context where this tracer needs to use -namely, `backtrace`
+is `AS-Unsafe init heap dlopen plugin lock` in the context where this tracer 
+needs to use it:
 
      libunwind:
      
