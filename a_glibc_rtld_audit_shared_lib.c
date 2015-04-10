@@ -144,7 +144,9 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
 
 
 static void
-show_caller_stack_backtrace(void)
+show_caller_stack_backtrace(const char *function_to_be_called, 
+			    uintptr_t *func_library_cookie, 
+			    La_x86_64_regs *calling_registers)
 {
   unw_cursor_t  stack_cursor;
   unw_context_t current_context;
@@ -170,8 +172,16 @@ show_caller_stack_backtrace(void)
       return;
   }
 
-  /* do the caller stack backtrace */
-  printf("     caller backtrace:\n");
+  /* do the caller stack backtrace, and, since this procedure is internally
+   * called through the procedures in the dynamic linker, explain also with
+   * what intent these internal procedures are called (ie., in order to call
+   * `function_to_be_called` */
+  La_x86_64_regs *r = calling_registers;
+  printf("     caller backtrace:\n"
+    	 "       [in order to call: %s(RDI=%lu, RSI=%lu, RDX=%lu, RCX=%lu, R8=%lu, R9=%lu)\n",
+	 function_to_be_called, r->lr_rdi, r->lr_rsi, r->lr_rdx, r->lr_rcx, 
+	 r->lr_r8, r->lr_r9 );
+
   unsigned  caller_depth = 0;
   while (unw_step(&stack_cursor) > 0) 
   {
@@ -241,7 +251,7 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
          __regs->lr_rcx, __regs->lr_r8, __regs->lr_r9 );
 
   /* Show the caller stack */
-  show_caller_stack_backtrace();
+  show_caller_stack_backtrace(__symname, __defcook, __regs);
   /* From man page of rtld-audit(7):
    *
    * The return value of la_pltenter() is as for la_symbind*(). 
