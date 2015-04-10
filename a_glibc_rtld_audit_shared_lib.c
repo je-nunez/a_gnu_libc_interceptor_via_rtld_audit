@@ -177,7 +177,9 @@ show_caller_stack_backtrace(void)
   {
      unw_get_reg(&stack_cursor, UNW_REG_IP, &instr_ptr);
      /* TODO: 
-      *     analysis of arguments at this stack frame &stack_cursor:
+      *     analysis of arguments at this stack frame &stack_cursor,
+      *     although this may be difficult because they could have
+      *     been passed through CPU registers and not through the stack.
       * 
          unw_get_reg(&stack_cursor, UNW_REG_IP, &stack_ptr); */
 
