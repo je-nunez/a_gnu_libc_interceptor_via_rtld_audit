@@ -132,11 +132,14 @@ described in the first paragraph that I'm still investigating here.
 
 In the `stack-backtrace` of the caller-procedures, the unwind of the caller stack
 is being done and shown on the caller stack of the Linux dynamic loader. This 
-stack-backtrace has to fixed on the caller stack in `glibc` itself up to `main()`.
+stack-backtrace has to be fixed on the caller stack in `glibc` itself up to `main()`.
 Ie., in the test program `a_test.c` in this repository, the stack-backtrace
 shows the procedures `la_x86_64_gnu_pltenter` (itself) and `_dl_profile_fixup`
-and `_dl_runtime_profile` beloging to the dynamic linker `/lib64/ld-linux-x86-64.so`,
-which it should really omit them (`0`, `1`, and `2`) in the stack-backtrace:
+and `_dl_runtime_profile` belonging to the dynamic linker `/lib64/ld-linux-x86-64.so`,
+whereas it should really omit these inner details in the stack-backtrace and print
+instead the intention of entering the procedure (`__symname`) (ie., replacing the
+inner lines `0:`, `1:`, and `2:` below with just the intention of calling proc 
+`__symname`):
 
      caller backtrace:
        0: 0x92b06229: la_x86_64_gnu_pltenter+0xde (./liba_glibc_rtld_audit_shared_lib.so.1.0.1)
