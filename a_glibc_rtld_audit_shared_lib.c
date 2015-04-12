@@ -162,13 +162,13 @@ show_caller_stack_backtrace(const char *function_to_be_called,
   procedure_info.unwind_info = NULL;
   ret = unw_getcontext(&current_context);
   if (ret) {
-      fprintf("unw_getcontext failed: %s [%d]\n", unw_strerror(ret), ret);
+      fprintf(stderr, "unw_getcontext failed: %s [%d]\n", unw_strerror(ret), ret);
       return;
   }
 
   ret = unw_init_local(&stack_cursor, &current_context);
   if (ret) {
-      fprintf("unw_init_local failed: %s [%d]\n", unw_strerror(ret), ret);
+      fprintf(stderr, "unw_init_local failed: %s [%d]\n", unw_strerror(ret), ret);
       return;
   }
 

@@ -1,7 +1,7 @@
 
 CC = gcc
-CFLAGS = -g -Wall
-LDFLAGS = -L/usr/lib64/
+CFLAGS = -g -Wall -I.
+LDFLAGS = -L/usr/lib64/ -L .
 
 
 .SILENT:  help
@@ -29,15 +29,22 @@ liba_glibc_rtld_audit_shared_lib.so.1.0.1: a_glibc_rtld_audit_shared_lib.c
 	$(CC) -shared   $(LDFLAGS) -Wl,-soname,liba_glibc_rtld_audit_shared_lib.so.1 -o liba_glibc_rtld_audit_shared_lib.so.1.0.1 a_glibc_rtld_audit_shared_lib.o -lc  -ldl  -lunwind 
 
 
-a_test: a_test.c
-	$(CC)  $(CFLAGS)  -o $@ $^
+a_test: a_test.c  shared_library_declared_at_compiling_time.c  shared_library_declared_at_compiling_time.h   shared_library_dynamic_loading.c   shared_library_dynamic_loading.h
+	$(CC) -fPIC -c $(CFLAGS)  shared_library_declared_at_compiling_time.c
+	$(CC) -shared  $(LDFLAGS) -Wl,-soname,libshared_library_declared_at_compiling_time.so -o libshared_library_declared_at_compiling_time.so shared_library_declared_at_compiling_time.o -lc
+
+	$(CC) -fPIC -c $(CFLAGS)  shared_library_dynamic_loading.c
+	$(CC) -shared  $(LDFLAGS) -Wl,-soname,libshared_library_dynamic_loading.so -o libshared_library_dynamic_loading.so shared_library_dynamic_loading.o -lc
+
+	$(CC) -c  $(CFLAGS)  -o a_test.o a_test.c  
+	$(CC) -rdynamic $(LDFLAGS)  -o a_test a_test.o  -lshared_library_declared_at_compiling_time   -ldl
 
 
 .PHONY : clean
 
 
 clean:
-	-rm -f a_test  a_test.o  a_glibc_rtld_audit_shared_lib.o   liba_glibc_rtld_audit_shared_lib.so.1.0.1
+	-rm -f a_test  a_test.o  a_glibc_rtld_audit_shared_lib.o   liba_glibc_rtld_audit_shared_lib.so.1.0.1 shared_library_declared_at_compiling_time.o  libshared_library_declared_at_compiling_time.so   shared_library_dynamic_loading.o   libshared_library_dynamic_loading.so
 
 run_a_test: a_test   liba_glibc_rtld_audit_shared_lib.so.1.0.1
 	LD_LIBRARY_PATH=`pwd` LD_AUDIT=liba_glibc_rtld_audit_shared_lib.so.1.0.1 ./a_test
