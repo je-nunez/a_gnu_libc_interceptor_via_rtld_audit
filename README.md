@@ -195,4 +195,13 @@ it is too much verbose:
            user-mode time spent: 0.000008
            kernel-mode time spent: 0.000386
       
+The profiling of the function call can report, besides the user/kernel-mode times
+spent, other fields of interest in the `struct rusage` returned by 
+`getrusage(RUSAGE_THREAD)`:
+
+     http://man7.org/linux/man-pages/man2/getrusage.2.html
+
+(Perhaps the profiling is focusing more in an audited program that happens to 
+have multiple threads. Probably if the program has only one thread, then the
+profiling can report more fields of `struct rusage`.)
 
