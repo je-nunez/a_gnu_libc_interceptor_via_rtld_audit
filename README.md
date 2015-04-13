@@ -182,7 +182,7 @@ externals `thread-ids` -and it stops the external thread, etc:
      
          http://man7.org/linux/man-pages/man2/ptrace.2.html
 
-We need to clear-up a little the report of this auditing library in the standard-output,
+We need to clean-up a little the report of this auditing library in the standard-output,
 it is too much verbose:
 
 
