@@ -186,7 +186,7 @@ We need to clear-up a little the report of this auditing library in the standard
 it is too much verbose:
 
 
-     1428903995.183209: <thread>: Calling symbol <function_name_in_shared_libr>
+     1428903995.183209: <thread>: Calling symbol <function_name_in_shared_libr> ...
         caller backtrace:
           <caller-stack-backtrace-up-to-this-function>
           ...
