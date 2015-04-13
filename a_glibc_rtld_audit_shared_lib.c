@@ -54,8 +54,8 @@ static __thread struct track_calling_stack * thread_caller_stack = NULL;
 /* TODO 222:
  *   Note: in the above "struct track_calling_stack" there could be a very subtle
  *         semantic mistake in the verification field "procedure_name" in the stack,
- *         because the __another__ glibc audit-library, in its pltenter(), can
- *         change the name of the "function_name" called, ---
+ *         because __another__ glibc audit-library, in its la_pltenter(), can change
+ *         the name of the "function_name" called, ---
  *
  *                 From man page of rtld-audit(7):
  *
@@ -65,11 +65,12 @@ static __thread struct track_calling_stack * thread_caller_stack = NULL;
  *
  *         so the name saved by this glibc audit-library in the field 
  *         "procedure_name" can be different to the name "function_name" that a
- *         __another__ glibc audit-library altered, so the pltexit() in this
- *         library will end up seeing the modified "function_name" and not
- *         the "procedure_name" it had expected, as recorded by pltenter() here.
- *         MAY this case described above happen? TODO: run a test with a second
- *         dummy audit lib which only does is to redirect the "function_name".
+ *         __another__ glibc audit-library altered, so the la_pltexit() in this
+ *         library will end up seeing the modified "function_name" and not the
+ *         original "procedure_name" it had expected, as recorded by la_pltenter()
+ *         here. MAY this case described above happen? TODO: run a test with a
+ *         second dummy rtld-audit lib whose only function is to redirect the
+ *         "function_name" in its la_pltenter().
  */
 
 static pid_t
@@ -302,7 +303,9 @@ record_profiling_info_at_entrance_in_function_call(const char *funct_name)
   }
 
   /* Link calling-stack data structure */
-  memset((void *)new_proc_in_stack, 0, sizeof(struct track_calling_stack));
+  /* We don't need memset(new_ptr, 0) because the following code fills the
+   * fields of *new_ptr, so a memset() would only be slowing down things */
+  /* memset((void *)new_proc_in_stack, 0, sizeof(struct track_calling_stack)); */
   new_proc_in_stack->next_in_stack = thread_caller_stack;
 
   /* Save procedure name as a validation-check in pltexit at return of it */
@@ -311,7 +314,7 @@ record_profiling_info_at_entrance_in_function_call(const char *funct_name)
   if (!new_proc_in_stack->procedure_name) {
      /* strdup() failed */
      print_errno_to_stderr("pltenter: strdup");
-     /* strdup() failed, so no point of tracking this profiling entry */
+     /* strdup() failed, so no point in tracking this profiling entry */
      /* TODO 11: solve case when the function in the shared-library is recursive */
      free(new_proc_in_stack);
      return -2;  /* return another negative number: another type of failure */
@@ -323,7 +326,7 @@ record_profiling_info_at_entrance_in_function_call(const char *funct_name)
    if (r == -1) {
       /* getrusage(RUSAGE_THREAD) failed */
       print_errno_to_stderr("pltenter: getrusage");
-      /* getrusage() failed, so no point of tracking this profiling entry */
+      /* getrusage() failed, so no point in tracking this profiling entry */
       /* TODO 11: solve case when the function in the shared-library is recursive */
       free(new_proc_in_stack->procedure_name);
       free(new_proc_in_stack);
@@ -397,7 +400,8 @@ calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_nam
    *    Use strncmp( only first 4096 ) instead of strcmp( all chars ) to avoid
    *    case of a misbehaving audited program (which is an arbitrary program 
    *    really) which happened to corrupt the heap memory --in particular, which
-   *    happen to corrupt our "thread_caller_stack" data structure
+   *    happens to corrupt our "thread_caller_stack" data structure, so there
+   *    is no domino of failures.
    */
 
   if (!thread_caller_stack->procedure_name  || 
@@ -407,7 +411,8 @@ calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_nam
                      "expected return from function '%s' "
                      "but received return from function '%s' instead\n",
                      thread_caller_stack->procedure_name, ret_func_name);
-     /* TODO: should we do anything with the mismatching head of our calling-stack?
+     /* TODO: should we do anything with the mismatching head of our calling-stack,
+      *       like popping() it anyways ?
       *       see unexpected case described in TODO 222 above */
      return -3;
   }

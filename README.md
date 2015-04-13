@@ -84,7 +84,19 @@ or alternatively:
 
 and you will see some lines like:
 
-     1427243201.652328: Calling symbol malloc from address 4006a0 ... (RDI=10240, RSI=0, RDX=11725120, RCX=11725120...
+     1428930338.096336: 9768: Calling symbol malloc from address 7f31464617e3 ... (RDI=7, RSI=1, RDX=0, RCX=241128144088, ...)
+          caller backtrace:
+          [in order to call: malloc(RDI=7, RSI=1, RDX=0, RCX=241128144088, R8=139849601925344, R9=3)
+          0: 0x7f31466827ab: la_x86_64_gnu_pltenter+0xed (./liba_glibc_rtld_audit_shared_lib.so.1.0.1)
+          1: 0x3823a0f83e: _dl_profile_fixup+0x3ce (/lib64/ld-linux-x86-64.so.2)
+          2: 0x3823a16c88: _dl_runtime_profile+0x8e8 (/lib64/ld-linux-x86-64.so.2)
+          3: 0x7f31464617e3: funct_in_shared_libr_declared_compiling_time+0x23 (./libshared_library_declared_at_compiling_time.so)
+          4: 0x3823a16d46: _dl_runtime_profile+0x9a6 (/lib64/ld-linux-x86-64.so.2)
+     1428930338.096831: 9768: Returning from symbol malloc ...
+          profiling call of malloc:
+             user-mode time spent: 0.000000
+             kernel-mode time spent: 0.000000
+
 
 where RDI, RSI, are the values of the CPU registers in the call to `malloc` above 
 (e.g. in the above call to `malloc()`, the requested amount of memory is set in 
@@ -105,7 +117,7 @@ your package manager, eg., for RedHat and Debian:
         
              yum install libunwind
          
-	Debian:
+        Debian:
         
              apt-get install libunwind
 
