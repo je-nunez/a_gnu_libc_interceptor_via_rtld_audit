@@ -182,3 +182,17 @@ externals `thread-ids` -and it stops the external thread, etc:
      
          http://man7.org/linux/man-pages/man2/ptrace.2.html
 
+We need to clear-up a little the report of this auditing library in the standard-output,
+it is too much verbose:
+
+
+   1428903995.183209: <thread>: Calling symbol <function_name_in_shared_libr>
+      caller backtrace:
+        <caller-stack-backtrace-up-to-this-function>
+        ...
+   1428903995.183627: <thread>: Returning from symbol <function_name_in_shared_libr>
+      profiling call of <function_name_in_shared_libr>:
+         user-mode time spent: 0.000008
+         kernel-mode time spent: 0.000386
+      
+

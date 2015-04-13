@@ -5,12 +5,29 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <link.h>
 #include <elf.h>
 #include <unistd.h>
+#include <sys/resource.h>
 #include <sys/syscall.h>
-#include <sys/time.h>
 #include <sys/types.h>
+
+#ifndef __USE_BSD
+#define __internal_BSD_was_not_in_use
+#define __USE_BSD
+#endif 
+    
+#include <sys/time.h>
+    /* We need timersub() from sys/time.h, available only when __USE_BSD */
+ 
+#ifdef __internal_BSD_was_not_in_use
+#undef __USE_BSD
+#endif 
+
+
 
 /* UNW_LOCAL_ONLY: Unwind caller stack-trace of local architecture only, not 
  * cross-platform */
@@ -22,6 +39,39 @@
 
 #define MAX_PROCEDURE_NAME_LENGTH  4096
  
+
+/* This is to track the profiling of time spent inside the procedures in the stack */
+
+struct track_calling_stack {
+       char * procedure_name;   /* this is to verify the name of proced. in stack */
+       struct rusage profiling_data_at_entry_in_call;  /* profiling data itself */
+       struct track_calling_stack * next_in_stack; /* TODO: avoid heap fragment */
+};
+
+/* static __thread unsigned levels_in_thread_caller_stack = 0;  // for avoiding heap fragmentation */
+static __thread struct track_calling_stack * thread_caller_stack = NULL;
+
+/* TODO 222:
+ *   Note: in the above "struct track_calling_stack" there could be a very subtle
+ *         semantic mistake in the verification field "procedure_name" in the stack,
+ *         because the __another__ glibc audit-library, in its pltenter(), can
+ *         change the name of the "function_name" called, ---
+ *
+ *                 From man page of rtld-audit(7):
+ *
+ *                     The return value of la_pltenter() is as for la_symbind*(). 
+ *                     --comment: ie., to change the name to which to record 
+ *                                this "function_name"
+ *
+ *         so the name saved by this glibc audit-library in the field 
+ *         "procedure_name" can be different to the name "function_name" that a
+ *         __another__ glibc audit-library altered, so the pltexit() in this
+ *         library will end up seeing the modified "function_name" and not
+ *         the "procedure_name" it had expected, as recorded by pltenter() here.
+ *         MAY this case described above happen? TODO: run a test with a second
+ *         dummy audit lib which only does is to redirect the "function_name".
+ */
+
 static pid_t
 __gettid(void)
 {
@@ -154,7 +204,7 @@ show_caller_stack_backtrace(const char *function_to_be_called,
   /* unw_word_t    stack_ptr;   TODO: unused at the moment */
 
   char procedure_name[MAX_PROCEDURE_NAME_LENGTH];
-  unw_word_t    proced_offset_of_call ;
+  unw_word_t    proced_offset_of_call;
   unw_proc_info_t procedure_info;
   Dl_info symb_info;
   const char * filename;
@@ -215,12 +265,74 @@ show_caller_stack_backtrace(const char *function_to_be_called,
      else
          filename = "???";
 
-     printf("     %d: 0x%x: %s%s+0x%x (%s)\n", caller_depth, instr_ptr, 
+     printf("     %d: 0x%lx: %s%s+0x%x (%s)\n", caller_depth, instr_ptr, 
 	    procedure_name, ret == -UNW_ENOMEM ? "..." : "",
 	    (unsigned int)proced_offset_of_call, filename);
      caller_depth++;
   }
 
+}
+
+
+static void
+print_errno_to_stderr(const char * err_ctx)
+{
+  int curr_errno = errno;
+  char err_descr[2048];
+
+  if (0 == strerror_r(curr_errno, err_descr, sizeof err_descr)) {
+     fprintf(stderr, "ERROR: %s: (errno=%d) %s\n",
+             err_ctx, curr_errno, err_descr);
+  } else {
+     /* strerror_r() itself also failed: print a generic error to stderr */
+     fprintf(stderr, "ERROR: %s and strerror_r both failed (errnos=%d and %d)\n",
+             err_ctx, curr_errno, errno);
+  } 
+}
+
+static int
+record_profiling_info_at_entrance_in_function_call(const char *funct_name)
+{
+  struct track_calling_stack * new_proc_in_stack;
+  new_proc_in_stack = (struct track_calling_stack *) malloc(sizeof(struct track_calling_stack));
+  if (!new_proc_in_stack) {
+     /* malloc()) failed */
+     print_errno_to_stderr("pltenter: malloc");
+     return -1;  /* return a negative number: a failure */
+  }
+
+  /* Link calling-stack data structure */
+  memset((void *)new_proc_in_stack, 0, sizeof(struct track_calling_stack));
+  new_proc_in_stack->next_in_stack = thread_caller_stack;
+
+  /* Save procedure name as a validation-check in pltexit at return of it */
+  /* TODO 11: solve case when the function in the shared-library is recursive */
+  new_proc_in_stack->procedure_name = strdup(funct_name);
+  if (!new_proc_in_stack->procedure_name) {
+     /* strdup() failed */
+     print_errno_to_stderr("pltenter: strdup");
+     /* strdup() failed, so no point of tracking this profiling entry */
+     /* TODO 11: solve case when the function in the shared-library is recursive */
+     free(new_proc_in_stack);
+     return -2;  /* return another negative number: another type of failure */
+   }
+
+   /* Record profiling data at this entrance to this procedure */
+   int r;
+   r= getrusage(RUSAGE_THREAD, &(new_proc_in_stack->profiling_data_at_entry_in_call));
+   if (r == -1) {
+      /* getrusage(RUSAGE_THREAD) failed */
+      print_errno_to_stderr("pltenter: getrusage");
+      /* getrusage() failed, so no point of tracking this profiling entry */
+      /* TODO 11: solve case when the function in the shared-library is recursive */
+      free(new_proc_in_stack->procedure_name);
+      free(new_proc_in_stack);
+      return -3; /* return another negative number: another failure */
+   }
+
+   /* getrusage() was successful, so we could save profiling data at entry */
+   thread_caller_stack = new_proc_in_stack;
+   return 0;   /* return 0, ie., SUCCESS */
 }
 
 extern Elf64_Addr 
@@ -255,12 +367,83 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
   show_caller_stack_backtrace(__symname, __defcook, __regs);
 
   /* TODO: Find better approximation for __framesizep, not 4KB */
-  *__framesizep = 4096 ;
+  *__framesizep = 4096;
+
+  /* save profiling point at the entrance into this procedure */
+  record_profiling_info_at_entrance_in_function_call(__symname);
+
   /* From man page of rtld-audit(7):
    *
    * The return value of la_pltenter() is as for la_symbind*(). 
    */
    return __sym->st_value;
+}
+
+
+static int
+calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_name) 
+{
+
+  /* do we have a stack recorded for this thread */
+  if (!thread_caller_stack) {
+     fprintf(stderr, "WARNING: calculating_profiling_cost: no stack-structure.\n");
+     return -2;  /* return -1 is used by a failing getrusage(3) below */
+  }
+
+  /* validation: is the top of our stack expecting the name "ret_func_name" ?
+   *    
+   *    Warning: see TODO 222 above, for an unusual case 
+   *    
+   *    Use strncmp( only first 4096 ) instead of strcmp( all chars ) to avoid
+   *    case of a misbehaving audited program (which is an arbitrary program 
+   *    really) which happened to corrupt the heap memory --in particular, which
+   *    happen to corrupt our "thread_caller_stack" data structure
+   */
+
+  if (!thread_caller_stack->procedure_name  || 
+      0 != strncmp(ret_func_name, thread_caller_stack->procedure_name, 4096)) {
+     /* the top of our stack was not expecting the name "ret_func_name" */
+     fprintf(stderr, "ERROR: calculating_profiling_cost: "
+                     "expected return from function '%s' "
+                     "but received return from function '%s' instead\n",
+                     thread_caller_stack->procedure_name, ret_func_name);
+     /* TODO: should we do anything with the mismatching head of our calling-stack?
+      *       see unexpected case described in TODO 222 above */
+     return -3;
+  }
+
+  /* the validation was ok: the top of our stack is the same as "ret_func_name"
+   * which is indeed returning now */
+
+  struct rusage  profiling_data_at_exit;  /* profiling data itself */
+  int r;
+  r= getrusage(RUSAGE_THREAD, &profiling_data_at_exit);
+  if (r == -1) {
+     /* getrusage(RUSAGE_THREAD) failed */
+     print_errno_to_stderr("pltexit: getrusage");
+     /* getrusage() failed, so we can't calculate the cost of this funct-call */
+  } else {
+     /* getrusage(RUSAGE_THREAD) was successful: calculate cost */
+    struct timeval delta_user_time; /* delta in user CPU time */
+    struct timeval delta_kern_time; /* delta in kernel CPU time */
+
+    timersub(&profiling_data_at_exit.ru_utime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_utime), &delta_user_time);
+    timersub(&profiling_data_at_exit.ru_stime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_stime), &delta_kern_time);
+
+    printf("     profiling call of %s:\n", ret_func_name);
+    printf("        user-mode time spent: %lu.%06lu\n", delta_user_time.tv_sec, delta_user_time.tv_usec);
+    printf("        kernel-mode time spent: %lu.%06lu\n", delta_kern_time.tv_sec, delta_kern_time.tv_usec);
+  }
+
+  /* free the current top of our caller-stack */
+  struct track_calling_stack * curr_funct_frame;
+  curr_funct_frame = thread_caller_stack;
+  thread_caller_stack = curr_funct_frame->next_in_stack;
+
+  free(curr_funct_frame->procedure_name);
+  free(curr_funct_frame);
+  
+  return r;  /* return same value as our getrusage() */
 }
 
 
@@ -278,6 +461,10 @@ la_x86_64_gnu_pltexit(Elf64_Sym *__sym, unsigned int __ndx,
          " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec, 
          kernel_thread_id, symname, 
 	 (unsigned long int) __refcook, (unsigned long int) __defcook);
+
+  /* calculate cost of this procedure call (profiling) */
+  calculate_profiling_cost_at_exit_of_this_function_call(symname);
+
   return (0);
 }
 
