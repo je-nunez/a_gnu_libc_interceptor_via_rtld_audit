@@ -105,7 +105,7 @@ la_objsearch(const char *__name, uintptr_t *__cookie, unsigned int __flag)
    * returned. 
    */
 
-  return __name;
+  return (char *)__name;
 }
 
 
@@ -150,7 +150,8 @@ show_caller_stack_backtrace(const char *function_to_be_called,
 {
   unw_cursor_t  stack_cursor;
   unw_context_t current_context;
-  unw_word_t    instr_ptr, stack_ptr;
+  unw_word_t    instr_ptr;
+  /* unw_word_t    stack_ptr;   TODO: unused at the moment */
 
   char procedure_name[MAX_PROCEDURE_NAME_LENGTH];
   unw_word_t    proced_offset_of_call ;
@@ -216,7 +217,7 @@ show_caller_stack_backtrace(const char *function_to_be_called,
 
      printf("     %d: 0x%x: %s%s+0x%x (%s)\n", caller_depth, instr_ptr, 
 	    procedure_name, ret == -UNW_ENOMEM ? "..." : "",
-	    (int)proced_offset_of_call, filename);
+	    (unsigned int)proced_offset_of_call, filename);
      caller_depth++;
   }
 
@@ -252,6 +253,9 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
 
   /* Show the caller stack */
   show_caller_stack_backtrace(__symname, __defcook, __regs);
+
+  /* TODO: Find better approximation for __framesizep, not 4KB */
+  *__framesizep = 4096 ;
   /* From man page of rtld-audit(7):
    *
    * The return value of la_pltenter() is as for la_symbind*(). 
