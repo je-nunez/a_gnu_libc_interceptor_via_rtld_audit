@@ -199,9 +199,17 @@ The profiling of the function call can report, besides the user/kernel-mode time
 spent, other fields of interest in the `struct rusage` returned by 
 `getrusage(RUSAGE_THREAD)`:
 
-     http://man7.org/linux/man-pages/man2/getrusage.2.html
+      http://man7.org/linux/man-pages/man2/getrusage.2.html
 
-(Perhaps the profiling is focusing more in an audited program that happens to 
-have multiple threads. Probably if the program has only one thread, then the
-profiling can report more fields of `struct rusage`.)
+since, if an audited program creates multiple threads, then, according to:
+
+      http://man7.org/linux/man-pages/man7/pthreads.7.html
+
+each field of `struct rusage` from `getrusage(RUSAGE_THREAD)` is proper to
+that thread, so each field can be profiled independently for each thread:
+
+      pthreads(7):
+     
+          -  The information returned by times(2) and getrusage(2) is per-
+             thread rather than process-wide.
 
