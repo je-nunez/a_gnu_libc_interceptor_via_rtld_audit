@@ -18,18 +18,18 @@
 #ifndef __USE_BSD
 #define __internal_BSD_was_not_in_use
 #define __USE_BSD
-#endif 
-    
+#endif
+
 #include <sys/time.h>
     /* We need timersub() from sys/time.h, available only when __USE_BSD */
- 
+
 #ifdef __internal_BSD_was_not_in_use
 #undef __USE_BSD
-#endif 
+#endif
 
 
 
-/* UNW_LOCAL_ONLY: Unwind caller stack-trace of local architecture only, not 
+/* UNW_LOCAL_ONLY: Unwind caller stack-trace of local architecture only, not
  * cross-platform */
 
 #define UNW_LOCAL_ONLY
@@ -38,7 +38,7 @@
 #include <dlfcn.h>
 
 #define MAX_PROCEDURE_NAME_LENGTH  4096
- 
+
 
 /* This is to track the profiling of time spent inside the procedures in the stack */
 
@@ -59,11 +59,11 @@ static __thread struct track_calling_stack * thread_caller_stack = NULL;
  *
  *                 From man page of rtld-audit(7):
  *
- *                     The return value of la_pltenter() is as for la_symbind*(). 
- *                     --comment: ie., to change the name to which to record 
+ *                     The return value of la_pltenter() is as for la_symbind*().
+ *                     --comment: ie., to change the name to which to record
  *                                this "function_name"
  *
- *         so the name saved by this glibc audit-library in the field 
+ *         so the name saved by this glibc audit-library in the field
  *         "procedure_name" can be different to the name "function_name" that a
  *         __another__ glibc audit-library altered, so the la_pltexit() in this
  *         library will end up seeing the modified "function_name" and not the
@@ -77,7 +77,7 @@ static pid_t
 __gettid(void)
 {
   /* returns the kthread id or pid() if no kthread */
-  /* uses the system-call to get the underlying 
+  /* uses the system-call to get the underlying
    * kthread() to this user-land execution thread */
   pid_t tid;
   tid = syscall(SYS_gettid);
@@ -90,14 +90,14 @@ la_version(unsigned int version)
 {
   return (LAV_CURRENT);
 }
- 
-extern unsigned int 
+
+extern unsigned int
 la_objopen(struct link_map *__map, Lmid_t __lmid, uintptr_t *__cookie)
 {
 
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
   printf("%lu.%06lu: %d: la_objopen(): loading \"%s\"; lmid = %s; cookie=%lx\n",
             tp.tv_sec, tp.tv_usec, kernel_thread_id,
@@ -107,31 +107,31 @@ la_objopen(struct link_map *__map, Lmid_t __lmid, uintptr_t *__cookie)
             "???",
             (unsigned long int) __cookie);
 
-  /* request to audit symbols in this object, and external symbols referenced 
+  /* request to audit symbols in this object, and external symbols referenced
    * from this object. */
   return (LA_FLG_BINDTO | LA_FLG_BINDFROM);
 }
 
-extern unsigned int 
+extern unsigned int
 la_objclose(uintptr_t *cookie)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
-  printf("%lu.%06lu: %d: Closing object with cookie %lx\n", 
+  printf("%lu.%06lu: %d: Closing object with cookie %lx\n",
          tp.tv_sec, tp.tv_usec, kernel_thread_id, (unsigned long int) cookie);
   return (0);
 }
 
-extern void 
+extern void
 la_preinit(uintptr_t *cookie)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
-  printf("%lu.%06lu: %d: Before calling main() with cookie %lx\n", 
+  printf("%lu.%06lu: %d: Before calling main() with cookie %lx\n",
          tp.tv_sec, tp.tv_usec, kernel_thread_id, (unsigned long int) cookie);
 }
 
@@ -141,43 +141,43 @@ la_objsearch(const char *__name, uintptr_t *__cookie, unsigned int __flag)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
-  printf("%lu.%06lu: %d: Searching for %s with cookie %lx\n", 
-         tp.tv_sec, tp.tv_usec, kernel_thread_id, __name, 
+  printf("%lu.%06lu: %d: Searching for %s with cookie %lx\n",
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __name,
          (unsigned long int) __cookie);
 
   /* From man page of rtld-audit(7):
    *
-   * As its function result, la_objsearch() returns the pathname that the 
-   * dynamic linker should use for further processing. If NULL is returned, 
-   * then this pathname is ignored for further processing. If this audit 
-   * library simply intends to monitor search paths, then name should be 
-   * returned. 
+   * As its function result, la_objsearch() returns the pathname that the
+   * dynamic linker should use for further processing. If NULL is returned,
+   * then this pathname is ignored for further processing. If this audit
+   * library simply intends to monitor search paths, then name should be
+   * returned.
    */
 
   return (char *)__name;
 }
 
 
-extern uintptr_t 
+extern uintptr_t
 la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
                                uintptr_t *__refcook, uintptr_t *__defcook,
                                unsigned int *__flags, const char *__symname)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
   printf("%lu.%06lu: %d: la_symbind64(): symname = %s; sym->st_value = %p",
-         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname, 
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname,
          (void *)__sym->st_value);
   printf("        ndx = %d; flags = 0x%x", __ndx, *__flags);
-  printf("; caller-cook = %lx; callee-cook = %lx\n", 
+  printf("; caller-cook = %lx; callee-cook = %lx\n",
 	 (unsigned long int) __refcook, (unsigned long int) __defcook);
 
   /*
-   * For debug: don't trace calls to, or returns from, this symbol: 
+   * For debug: don't trace calls to, or returns from, this symbol:
         *__flags = (LA_SYMB_NOPLTENTER | LA_SYMB_NOPLTEXIT);
    *
    */
@@ -185,18 +185,18 @@ la_symbind64(Elf64_Sym *__sym, unsigned int __ndx,
 
   /* From man page of rtld-audit(7):
    *
-   * The return value of la_symbind32() and la_symbind64() is the address to 
-   * which control should be passed after the function returns. If the auditing 
-   * library is simply monitoring symbol bindings, then it should return 
-   * sym->st_value. A different value may be returned if the library wishes to 
+   * The return value of la_symbind32() and la_symbind64() is the address to
+   * which control should be passed after the function returns. If the auditing
+   * library is simply monitoring symbol bindings, then it should return
+   * sym->st_value. A different value may be returned if the library wishes to
    * direct control to an alternate location. */
   return __sym->st_value;
 }
 
 
 static void
-show_caller_stack_backtrace(const char *function_to_be_called, 
-			    uintptr_t *func_library_cookie, 
+show_caller_stack_backtrace(const char *function_to_be_called,
+			    uintptr_t *func_library_cookie,
 			    La_x86_64_regs *calling_registers)
 {
   unw_cursor_t  stack_cursor;
@@ -231,18 +231,18 @@ show_caller_stack_backtrace(const char *function_to_be_called,
   La_x86_64_regs *r = calling_registers;
   printf("     caller backtrace:\n"
     	 "       [in order to call: %s(RDI=%lu, RSI=%lu, RDX=%lu, RCX=%lu, R8=%lu, R9=%lu)\n",
-	 function_to_be_called, r->lr_rdi, r->lr_rsi, r->lr_rdx, r->lr_rcx, 
+	 function_to_be_called, r->lr_rdi, r->lr_rsi, r->lr_rdx, r->lr_rcx,
 	 r->lr_r8, r->lr_r9 );
 
   unsigned  caller_depth = 0;
-  while (unw_step(&stack_cursor) > 0) 
+  while (unw_step(&stack_cursor) > 0)
   {
      unw_get_reg(&stack_cursor, UNW_REG_IP, &instr_ptr);
-     /* TODO: 
+     /* TODO:
       *     analysis of arguments at this stack frame &stack_cursor,
       *     although this may be difficult because they could have
       *     been passed through CPU registers and not through the stack.
-      * 
+      *
          unw_get_reg(&stack_cursor, UNW_REG_IP, &stack_ptr); */
 
      ret = unw_get_proc_info(&stack_cursor, &procedure_info);
@@ -251,22 +251,22 @@ show_caller_stack_backtrace(const char *function_to_be_called,
          break;
      }
 
-     ret = unw_get_proc_name(&stack_cursor, procedure_name, 
+     ret = unw_get_proc_name(&stack_cursor, procedure_name,
 			     sizeof procedure_name, &proced_offset_of_call);
      if (ret && ret != -UNW_ENOMEM) {
-         if (ret != -UNW_EUNSPEC) printf("ERROR: unw_get_proc_name: %s [%d]\n", 
+         if (ret != -UNW_EUNSPEC) printf("ERROR: unw_get_proc_name: %s [%d]\n",
 					 unw_strerror(ret), ret);
          procedure_name[0] = procedure_name[1] = procedure_name[2] = '?';
          procedure_name[3] = 0;
      }
 
-     if (dladdr((void *)(procedure_info.start_ip + proced_offset_of_call), 
+     if (dladdr((void *)(procedure_info.start_ip + proced_offset_of_call),
 		&symb_info) && symb_info.dli_fname && *symb_info.dli_fname)
          filename = symb_info.dli_fname;
      else
          filename = "???";
 
-     printf("     %d: 0x%lx: %s%s+0x%x (%s)\n", caller_depth, instr_ptr, 
+     printf("     %d: 0x%lx: %s%s+0x%x (%s)\n", caller_depth, instr_ptr,
 	    procedure_name, ret == -UNW_ENOMEM ? "..." : "",
 	    (unsigned int)proced_offset_of_call, filename);
      caller_depth++;
@@ -288,7 +288,7 @@ print_errno_to_stderr(const char * err_ctx)
      /* strerror_r() itself also failed: print a generic error to stderr */
      fprintf(stderr, "ERROR: %s and strerror_r both failed (errnos=%d and %d)\n",
              err_ctx, curr_errno, errno);
-  } 
+  }
 }
 
 static int
@@ -304,7 +304,21 @@ record_profiling_info_at_entrance_in_function_call(const char *funct_name)
 
   /* Link calling-stack data structure */
   /* We don't need memset(new_ptr, 0) because the following code fills the
-   * fields of *new_ptr, so a memset() would only be slowing down things */
+   * fields of *new_ptr, so a memset() would only be slowing down things.
+   * Besides, memset() on the field of struct track_calling_stack:
+   *        struct rusage profiling_data_at_entry_in_call;
+   * is wasteful, because the Linux kernel does the memset on it:
+   *  kernel/sys.c:
+   *
+   *   static void k_getrusage(struct task_struct *p, int who, struct rusage *r)
+   *   {
+   *           ....
+   *           memset((char *) r, 0, sizeof *r);
+   *
+   * because the above implementation later needs to do an increment += in:
+   *  kernel/sys.c:
+   *           accumulate_thread_rusage(p, r);
+   */
   /* memset((void *)new_proc_in_stack, 0, sizeof(struct track_calling_stack)); */
   new_proc_in_stack->next_in_stack = thread_caller_stack;
 
@@ -338,7 +352,7 @@ record_profiling_info_at_entrance_in_function_call(const char *funct_name)
    return 0;   /* return 0, ie., SUCCESS */
 }
 
-extern Elf64_Addr 
+extern Elf64_Addr
 la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
                        uintptr_t *__refcook, uintptr_t *__defcook,
                        La_x86_64_regs *__regs, unsigned int *__flags,
@@ -346,24 +360,24 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
-  uint64_t register_x86_64_stack_pointer = __regs->lr_rsp; 
+  uint64_t register_x86_64_stack_pointer = __regs->lr_rsp;
   uint64_t return_address_to_callee = (* (uint64_t *)register_x86_64_stack_pointer);
 
-  printf("%lu.%06lu: %d: Calling symbol %s from address %lx" 
-         " in object with cookie %lx defined in object with cookie %lx", 
-         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname, 
-         return_address_to_callee, (unsigned long int) __refcook, 
+  printf("%lu.%06lu: %d: Calling symbol %s from address %lx"
+         " in object with cookie %lx defined in object with cookie %lx",
+         tp.tv_sec, tp.tv_usec, kernel_thread_id, __symname,
+         return_address_to_callee, (unsigned long int) __refcook,
          (unsigned long int) __defcook);
 
-  /* Print x86-64 registers 
-   *     The first six integer or pointer arguments are passed in registers 
+  /* Print x86-64 registers
+   *     The first six integer or pointer arguments are passed in registers
    *     RDI, RSI, RDX, RCX, R8, and R9.
    * http://en.wikipedia.org/wiki/X86_calling_conventions#System_V_AMD64_ABI
    */
-  printf(" (RDI=%lu, RSI=%lu, RDX=%lu, RCX=%lu, R8=%lu, R9=%lu)\n", 
-         __regs->lr_rdi, __regs->lr_rsi, __regs->lr_rdx, 
+  printf(" (RDI=%lu, RSI=%lu, RDX=%lu, RCX=%lu, R8=%lu, R9=%lu)\n",
+         __regs->lr_rdi, __regs->lr_rsi, __regs->lr_rdx,
          __regs->lr_rcx, __regs->lr_r8, __regs->lr_r9 );
 
   /* Show the caller stack */
@@ -377,14 +391,115 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
 
   /* From man page of rtld-audit(7):
    *
-   * The return value of la_pltenter() is as for la_symbind*(). 
+   * The return value of la_pltenter() is as for la_symbind*().
    */
    return __sym->st_value;
 }
 
 
 static int
-calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_name) 
+print_profiling_cost_between_two_snapshots_in_time(const char * func_name,
+						   const struct rusage * snap0,
+                                                   const struct rusage * snap1)
+{
+  /* Print only the profiling cost that is non-zero in a 'struct rusage'.
+   * Use a buffer-string with snprintf() instead of the slower multiple printf()
+   * For the rest, this print_profiling_cost_between_two_snapshots_in_time()
+   * is long because it has to print on each field of the 'struct rusage'.
+   */
+
+  char output_buff[2048];  /* 2K should be enough, since there are 17 'long'
+                            * fields in 'struct rusage', and each 'long'
+                            * can take up to 10 chars when printed with "%l",
+                            * so 17 * 10 = 170 characters to print the whole
+                            * 'struct rusage', plus some "<field-label>:"
+                            * that also go into this buffer to explain the 
+                            * field "%l" it is reporting on. */
+
+  output_buff[0] = '\0';
+  char * curr_str_pos = output_buff;
+  size_t remaining_space = sizeof output_buff;
+  int n;
+#define DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR                               \
+                 do {                                                      \
+                     remaining_space-= n;                                  \
+                     if (remaining_space == 0)                             \
+		       goto buffer_size_could_not_hold_info; /* TODO: realloc */ \
+                     curr_str_pos += n;                                    \
+                 } while (0)
+
+#define SPRINTF_DELTA_IN_A_FIELD(field, descr)                             \
+                 do {                                                      \
+                      if ((snap1->field - snap0->field) != 0) {            \
+                          n= snprintf(curr_str_pos, remaining_space,       \
+		                      " " descr ": %ld",                   \
+				      (snap1->field - snap0->field));      \
+                          DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;            \
+                      }                                                    \
+                 } while (0)
+
+
+  struct timeval delta_user_time; /* delta in user CPU time */
+  struct timeval delta_kern_time; /* delta in kernel CPU time */
+
+  timersub(&(snap1->ru_utime), &(snap0->ru_utime), &delta_user_time);
+  timersub(&(snap1->ru_stime), &(snap0->ru_stime), &delta_kern_time);
+
+  /*
+  timersub(&profiling_data_at_exit.ru_utime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_utime), &delta_user_time);
+  timersub(&profiling_data_at_exit.ru_stime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_stime), &delta_kern_time);
+  */
+
+  if (delta_user_time.tv_sec != 0 || delta_user_time.tv_usec != 0) {
+     n= snprintf(curr_str_pos, remaining_space, 
+		 " user-mode time spent: %lu.%06lu", delta_user_time.tv_sec,
+		 delta_user_time.tv_usec);
+     DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;
+  }
+
+  if (delta_kern_time.tv_sec != 0 || delta_kern_time.tv_usec != 0) {
+     n= snprintf(curr_str_pos, remaining_space, 
+		 " kernel-mode time spent: %lu.%06lu", delta_kern_time.tv_sec,
+		 delta_kern_time.tv_usec);
+     DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;
+  }
+
+  SPRINTF_DELTA_IN_A_FIELD(ru_maxrss, "maxrss");
+  SPRINTF_DELTA_IN_A_FIELD(ru_ixrss, "ixrss");
+  SPRINTF_DELTA_IN_A_FIELD(ru_idrss, "idrss");
+  SPRINTF_DELTA_IN_A_FIELD(ru_isrss, "isrss");
+  SPRINTF_DELTA_IN_A_FIELD(ru_minflt, "minflt");
+  SPRINTF_DELTA_IN_A_FIELD(ru_majflt, "majflt");
+  SPRINTF_DELTA_IN_A_FIELD(ru_nswap, "nswap");
+  SPRINTF_DELTA_IN_A_FIELD(ru_inblock, "inblock");
+  SPRINTF_DELTA_IN_A_FIELD(ru_oublock, "oublock");
+  SPRINTF_DELTA_IN_A_FIELD(ru_msgsnd, "msgsnd");
+  SPRINTF_DELTA_IN_A_FIELD(ru_msgrcv, "msgrcv");
+  SPRINTF_DELTA_IN_A_FIELD(ru_nsignals, "nsignals");
+  SPRINTF_DELTA_IN_A_FIELD(ru_nvcsw, "nvcsw");
+  SPRINTF_DELTA_IN_A_FIELD(ru_nivcsw, "nivcsw");
+
+  /* The output_buff was prepared and has all the info */
+#undef DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR
+#undef SPRINTF_DELTA_IN_A_FIELD
+
+  if (output_buff[0] != '\0') {
+     printf("     profiling of call to %s:%s\n", func_name, output_buff);
+  } else {
+     printf("     profiling of call to %s: all profiling fields are 0\n", func_name);
+  }
+  return 1;    /* SUCCESS */
+
+buffer_size_could_not_hold_info:
+
+  printf("     profiling of call to %s:%s [...omitted]\n", func_name, output_buff);
+  fprintf(stderr, "WARNING: print_profiling_cost_between_two_snapshots_in_time: output_buff couldn't hold profiling string.\n");
+  return 0;    /* ERROR */
+}
+
+
+static int
+calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_name)
 {
 
   /* do we have a stack recorded for this thread */
@@ -394,17 +509,17 @@ calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_nam
   }
 
   /* validation: is the top of our stack expecting the name "ret_func_name" ?
-   *    
-   *    Warning: see TODO 222 above, for an unusual case 
-   *    
+   *
+   *    Warning: see TODO 222 above, for an unusual case
+   *
    *    Use strncmp( only first 4096 ) instead of strcmp( all chars ) to avoid
-   *    case of a misbehaving audited program (which is an arbitrary program 
+   *    case of a misbehaving audited program (which is an arbitrary program
    *    really) which happened to corrupt the heap memory --in particular, which
    *    happens to corrupt our "thread_caller_stack" data structure, so there
    *    is no domino of failures.
    */
 
-  if (!thread_caller_stack->procedure_name  || 
+  if (!thread_caller_stack->procedure_name  ||
       0 != strncmp(ret_func_name, thread_caller_stack->procedure_name, 4096)) {
      /* the top of our stack was not expecting the name "ret_func_name" */
      fprintf(stderr, "ERROR: calculating_profiling_cost: "
@@ -428,16 +543,10 @@ calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_nam
      print_errno_to_stderr("pltexit: getrusage");
      /* getrusage() failed, so we can't calculate the cost of this funct-call */
   } else {
-     /* getrusage(RUSAGE_THREAD) was successful: calculate cost */
-    struct timeval delta_user_time; /* delta in user CPU time */
-    struct timeval delta_kern_time; /* delta in kernel CPU time */
-
-    timersub(&profiling_data_at_exit.ru_utime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_utime), &delta_user_time);
-    timersub(&profiling_data_at_exit.ru_stime, &(thread_caller_stack->profiling_data_at_entry_in_call.ru_stime), &delta_kern_time);
-
-    printf("     profiling call of %s:\n", ret_func_name);
-    printf("        user-mode time spent: %lu.%06lu\n", delta_user_time.tv_sec, delta_user_time.tv_usec);
-    printf("        kernel-mode time spent: %lu.%06lu\n", delta_kern_time.tv_sec, delta_kern_time.tv_usec);
+     /* getrusage(RUSAGE_THREAD) was successful: print cost of call */
+    print_profiling_cost_between_two_snapshots_in_time(ret_func_name,
+		&thread_caller_stack->profiling_data_at_entry_in_call,
+		&profiling_data_at_exit);
   }
 
   /* free the current top of our caller-stack */
@@ -447,24 +556,24 @@ calculate_profiling_cost_at_exit_of_this_function_call(const char * ret_func_nam
 
   free(curr_funct_frame->procedure_name);
   free(curr_funct_frame);
-  
+
   return r;  /* return same value as our getrusage() */
 }
 
 
-extern unsigned int 
+extern unsigned int
 la_x86_64_gnu_pltexit(Elf64_Sym *__sym, unsigned int __ndx,
                       uintptr_t *__refcook, uintptr_t *__defcook,
-                      const La_x86_64_regs *__inregs, 
+                      const La_x86_64_regs *__inregs,
                       La_x86_64_retval *__outregs, const char *symname)
 {
   struct timeval tp;
   gettimeofday(&tp, NULL);
-  pid_t kernel_thread_id = __gettid();  
+  pid_t kernel_thread_id = __gettid();
 
   printf("%lu.%06lu: %d: Returning from symbol %s from object with cookie %lx"
-         " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec, 
-         kernel_thread_id, symname, 
+         " in object with cookie %lx\n", tp.tv_sec, tp.tv_usec,
+         kernel_thread_id, symname,
 	 (unsigned long int) __refcook, (unsigned long int) __defcook);
 
   /* calculate cost of this procedure call (profiling) */

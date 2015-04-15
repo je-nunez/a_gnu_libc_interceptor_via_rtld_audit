@@ -207,6 +207,15 @@ it is too much verbose:
            user-mode time spent: 0.000008
            kernel-mode time spent: 0.000386
       
+(For an alternative method of profiling, but on only one shared library, see the
+environment variable `LD_PROFILE` to the glibc dynamic loader library, `ld.so`:
+
+      http://man7.org/linux/man-pages/man8/ld.so.8.html
+
+)
+
+`THE FOLLOWING PART HAS BEEN IMPLEMENTED IN THIS PROJECT - READY FOR DELETION`:
+
 The profiling of the function call can report, besides the user/kernel-mode times
 spent, other fields of interest in the `struct rusage` returned by 
 `getrusage(RUSAGE_THREAD)`:
