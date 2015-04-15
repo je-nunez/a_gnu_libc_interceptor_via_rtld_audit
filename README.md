@@ -214,23 +214,3 @@ environment variable `LD_PROFILE` to the glibc dynamic loader library, `ld.so`:
 
 )
 
-`THE FOLLOWING PART HAS BEEN IMPLEMENTED IN THIS PROJECT - READY FOR DELETION`:
-
-The profiling of the function call can report, besides the user/kernel-mode times
-spent, other fields of interest in the `struct rusage` returned by 
-`getrusage(RUSAGE_THREAD)`:
-
-      http://man7.org/linux/man-pages/man2/getrusage.2.html
-
-since, if an audited program creates multiple threads, then, according to:
-
-      http://man7.org/linux/man-pages/man7/pthreads.7.html
-
-each field of `struct rusage` from `getrusage(RUSAGE_THREAD)` is proper to
-that thread, so each field can be profiled independently for each thread:
-
-      pthreads(7):
-     
-          -  The information returned by times(2) and getrusage(2) is per-
-             thread rather than process-wide.
-
