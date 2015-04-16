@@ -231,11 +231,11 @@ Using `perf record -g ...` to see the overhead added:
 
 It seems that the main load added by this auditor is in its verbose output 
 (`format_decode()` and `vsnprintf()`) and also in the `libunwind`'s 
-`_Uelf64_get_proc_name_in_image` used in the caller-stack trace: probably 
+`_Uelf64_get_proc_name_in_image()` used in the caller-stack trace: probably 
 some caching in order to avoid calling this procedure in `libunwind` when
-the Instr-Pointer address of the call is already contained in some range in
-the cache may help in preventing the call to `_Uelf64_get_proc_name_in_image`,
+the `Instr-Pointer` address of the call is already contained in some range in
+the cache may help in preventing the call to `_Uelf64_get_proc_name_in_image()`,
 although for this caching we need to intercept also other functions, like 
-`dlclose()` or `dlopen()`, which make the range of Instr-Pointers per procedure
-name to be invalidated.
+`dlclose()` or `dlopen()`, which make the cache of ranges (mappings) of 
+`Instr-Pointers` per procedure name to be invalidated.
 
