@@ -214,3 +214,28 @@ environment variable `LD_PROFILE` to the glibc dynamic loader library, `ld.so`:
 
 )
 
+# Overhead added by this auditor
+
+Using `perf record -g ...` to see the overhead added:
+
+      7.05%  a_test   [kernel.kallsyms]   [k] format_decode
+      5.79%  a_test   [kernel.kallsyms]   [k] number.isra.2
+      5.66%  a_test   [kernel.kallsyms]   [k] vsnprintf
+      3.79%  a_test   [kernel.kallsyms]   [k] prepend_name
+      3.67%  a_test   libunwind.so.8.0.1  [.] _Uelf64_get_proc_name_in_image
+      3.65%  a_test   [kernel.kallsyms]   [k] strchr
+      3.33%  a_test   [kernel.kallsyms]   [k] mangle_path
+      3.31%  a_test   libc-2.20.so        [.] vfprintf
+      3.29%  sh       [kernel.kallsyms]   [k] page_fault
+      2.55%  a_test   libunwind.so.8.0.1  [.] _Ux86_64_get_elf_image
+
+It seems that the main load added by this auditor is in its verbose output 
+(`format_decode()` and `vsnprintf()`) and also in the `libunwind`'s 
+`_Uelf64_get_proc_name_in_image` used in the caller-stack trace: probably 
+some caching in order to avoid calling this procedure in `libunwind` when
+the Instr-Pointer address of the call is already contained in some range in
+the cache may help in preventing the call to `_Uelf64_get_proc_name_in_image`,
+although for this caching we need to intercept also other functions, like 
+`dlclose()` or `dlopen()`, which make the range of Instr-Pointers per procedure
+name to be invalidated.
+
