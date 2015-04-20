@@ -398,6 +398,48 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
 
 
 static int
+strcat_descript_number(char * destin, char * description, long number)
+{
+    /* Implements:
+     *     return snprintf(destin, remaining_space,
+     *                     " " description ": %ld", number);
+     */
+
+    int n=1;
+    /* Append a space */
+    *destin++ = ' ';
+    /* Append the description */
+    while (*description != '\0') {
+        *destin++ = *description++;
+        n++;
+    }
+    /* Append a colon and a space */
+    *destin++ = ':';
+    *destin++ = ' ';
+    n+=2;
+    /* Convert "number" */
+    if (number == 0) { *destin++='0'; *destin++='\0'; return ++n; }
+    else if (number < 0) { *destin++='-'; number= -number; n++; }
+
+    /* Convert "number" to a temporary string */
+
+    char n_to_s[51];     /* 51 is large enough for an int128 */
+    int i = -1, rem;
+    while (number != 0)
+    {
+        rem = number % 10;
+        number /= 10;
+        n_to_s[++i] = rem + '0';
+    }
+
+    n+=i;
+    for (; i >= 0; i--) *destin++ = n_to_s[i];
+    *destin = '\0';
+
+    return n;
+}
+
+static int
 print_profiling_cost_between_two_snapshots_in_time(const char * func_name,
 						   const struct rusage * snap0,
                                                    const struct rusage * snap1)
@@ -413,7 +455,7 @@ print_profiling_cost_between_two_snapshots_in_time(const char * func_name,
                             * can take up to 10 chars when printed with "%l",
                             * so 17 * 10 = 170 characters to print the whole
                             * 'struct rusage', plus some "<field-label>:"
-                            * that also go into this buffer to explain the 
+                            * that also go into this buffer to explain the
                             * field "%l" it is reporting on. */
 
   output_buff[0] = '\0';
@@ -431,9 +473,8 @@ print_profiling_cost_between_two_snapshots_in_time(const char * func_name,
 #define SPRINTF_DELTA_IN_A_FIELD(field, descr)                             \
                  do {                                                      \
                       if ((snap1->field - snap0->field) != 0) {            \
-                          n= snprintf(curr_str_pos, remaining_space,       \
-		                      " " descr ": %ld",                   \
-				      (snap1->field - snap0->field));      \
+                          n= strcat_descript_number(curr_str_pos, descr,   \
+				          (snap1->field - snap0->field));  \
                           DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;            \
                       }                                                    \
                  } while (0)
@@ -451,14 +492,14 @@ print_profiling_cost_between_two_snapshots_in_time(const char * func_name,
   */
 
   if (delta_user_time.tv_sec != 0 || delta_user_time.tv_usec != 0) {
-     n= snprintf(curr_str_pos, remaining_space, 
+     n= snprintf(curr_str_pos, remaining_space,
 		 " user-mode time spent: %lu.%06lu", delta_user_time.tv_sec,
 		 delta_user_time.tv_usec);
      DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;
   }
 
   if (delta_kern_time.tv_sec != 0 || delta_kern_time.tv_usec != 0) {
-     n= snprintf(curr_str_pos, remaining_space, 
+     n= snprintf(curr_str_pos, remaining_space,
 		 " kernel-mode time spent: %lu.%06lu", delta_kern_time.tv_sec,
 		 delta_kern_time.tv_usec);
      DECR_BUFF_SPACE_AND_ADVANCE_BUFF_PTR;

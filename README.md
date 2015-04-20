@@ -218,19 +218,17 @@ environment variable `LD_PROFILE` to the glibc dynamic loader library, `ld.so`:
 
 Using `perf record -g ...` to see the overhead added:
 
-      7.05%  a_test   [kernel.kallsyms]   [k] format_decode
-      5.79%  a_test   [kernel.kallsyms]   [k] number.isra.2
-      5.66%  a_test   [kernel.kallsyms]   [k] vsnprintf
-      3.79%  a_test   [kernel.kallsyms]   [k] prepend_name
-      3.67%  a_test   libunwind.so.8.0.1  [.] _Uelf64_get_proc_name_in_image
-      3.65%  a_test   [kernel.kallsyms]   [k] strchr
-      3.33%  a_test   [kernel.kallsyms]   [k] mangle_path
-      3.31%  a_test   libc-2.20.so        [.] vfprintf
-      3.29%  sh       [kernel.kallsyms]   [k] page_fault
-      2.55%  a_test   libunwind.so.8.0.1  [.] _Ux86_64_get_elf_image
+      8.11%  a_test   libunwind.so.8.0.1                         [.] _Uelf64_get_proc_name_in_image
+      4.18%  a_test   [kernel.kallsyms]                          [k] format_decode
+      4.09%  a_test   [kernel.kallsyms]                          [k] number.isra.2
+      3.83%  a_test   [kernel.kallsyms]                          [k] memcpy
+      3.77%  a_test   [kernel.kallsyms]                          [k] vsnprintf
+      2.72%  a_test   libunwind.so.8.0.1                         [.] _Ux86_64_get_elf_image
 
-It seems that the main load added by this auditor is in its verbose output
-(`format_decode()` and `vsnprintf()`) and also in the `libunwind`'s
+So the old load using `snprintf` (which appeared in `perf record` as
+`format_decode()` and `vsnprintf()`) diminished when we reduced the use of
+`snprintf` in the profiling sections (there are other sections of the code
+that still use `snprintf`). The `perf record` also shows the `libunwind`'s
 `_Uelf64_get_proc_name_in_image()` used in the caller-stack trace: probably
 some caching in order to avoid calling this procedure in `libunwind` when
 the `Instr-Pointer` address of the call is already contained in some range in
