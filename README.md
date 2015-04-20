@@ -218,20 +218,21 @@ environment variable `LD_PROFILE` to the glibc dynamic loader library, `ld.so`:
 
 Using `perf record -g ...` to see the overhead added:
 
-      8.11%  a_test   libunwind.so.8.0.1                         [.] _Uelf64_get_proc_name_in_image
-      4.18%  a_test   [kernel.kallsyms]                          [k] format_decode
-      4.09%  a_test   [kernel.kallsyms]                          [k] number.isra.2
-      3.83%  a_test   [kernel.kallsyms]                          [k] memcpy
-      3.77%  a_test   [kernel.kallsyms]                          [k] vsnprintf
-      2.72%  a_test   libunwind.so.8.0.1                         [.] _Ux86_64_get_elf_image
+      8.11%  a_test   libunwind.so.8.0.1                 [.] _Uelf64_get_proc_name_in_image
+      4.18%  a_test   [kernel.kallsyms]                  [k] format_decode
+      4.09%  a_test   [kernel.kallsyms]                  [k] number.isra.2
+      3.83%  a_test   [kernel.kallsyms]                  [k] memcpy
+      3.77%  a_test   [kernel.kallsyms]                  [k] vsnprintf
+      2.72%  a_test   libunwind.so.8.0.1                 [.] _Ux86_64_get_elf_image
 
-So the old load using `snprintf` (which appeared in `perf record` as
-`format_decode()` and `vsnprintf()`) diminished when we reduced the use of
-`snprintf` in the profiling sections (there are other sections of the code
-that still use `snprintf`). The `perf record` also shows the `libunwind`'s
-`_Uelf64_get_proc_name_in_image()` used in the caller-stack trace: probably
-some caching in order to avoid calling this procedure in `libunwind` when
-the `Instr-Pointer` address of the call is already contained in some range in
+So the old load using `snprintf` (which appeared in `perf record` as much higher
+loads from `format_decode()` and `vsnprintf()` than appear now) diminished when
+we replaced the use of `snprintf` in the profiling sections with a custom
+procedure for our case (there are other sections of the code that still use
+`snprintf`). The `perf record` also shows the `libunwind`'s 
+`_Uelf64_get_proc_name_in_image()` used in the caller-stack trace: probably some
+caching in order to avoid calling this procedure in `libunwind` when the 
+`Instr-Pointer` address of the call is already contained in some range in
 the cache may help in preventing the call to `_Uelf64_get_proc_name_in_image()`,
 although for this caching we need to intercept also other functions, like
 `dlclose()` and `dlopen()`, which make the cache of ranges (mappings) of
