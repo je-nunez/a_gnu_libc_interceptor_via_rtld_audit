@@ -400,9 +400,19 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
 static int
 strcat_descript_number(char * destin, char * description, long number)
 {
-    /* Implements:
-     *     return snprintf(destin, remaining_space,
-     *                     " " description ": %ld", number);
+    /* This is an optimization which implements:
+     * 
+     *     return sprintf(destin, " %s: %ld", description, number);
+     *  
+     * since it is called repeatedly. It doesn't need to implement the
+     * version of:
+     * 
+     *          snprintf(destin, max_size,...) 
+     * because its callee,
+     *          print_profiling_cost_between_two_snapshots_in_time()
+     * passes to it its local string buffer "output_buff[2048]", 
+     * which has enough space for the formatted result. See comment
+     * on this variable "output_buff[2048]" below.
      */
 
     int n=1;
