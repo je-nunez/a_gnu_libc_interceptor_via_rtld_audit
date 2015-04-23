@@ -8,58 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The header files for the module we want to test */
 
-/* TODO:
- * Probably a better modularization for including 
- *        strcat_descript_number()
- * from the main program here in the unit-tests.
- * E.g., TODO a
- * 
- *      #include "strcat_descript_number.c"
- *
- */
-static int
-strcat_descript_number(char * destin, char * description, long number)
-{
-    /* Implements:
-     *     return snprintf(destin, remaining_space,
-     *                     " " description ": %ld", number);
-     */
-
-    int n=1;
-    /* Append a space */
-    *destin++ = ' ';
-    /* Append the description */
-    while (*description != '\0') {
-        *destin++ = *description++;
-        n++;
-    }
-    /* Append a colon and a space */
-    *destin++ = ':';
-    *destin++ = ' ';
-    n+=2;
-    /* Convert "number" */
-    if (number == 0) { *destin++='0'; *destin++='\0'; return ++n; }
-    else if (number < 0) { *destin++='-'; number= -number; n++; }
-
-    /* Convert "number" to a temporary string */
-
-    char n_to_s[51];     /* 51 is large enough for an int128 */
-    int i = -1, rem;
-    while (number != 0)
-    {
-        rem = number % 10;
-        number /= 10;
-        n_to_s[++i] = rem + '0';
-    }
-
-    n+=i;
-    for (; i >= 0; i--) *destin++ = n_to_s[i];
-    *destin = '\0';
-
-    return n;
-}
-
+#include "module_strcat_descript_number.h"
 
 int
 main(void)
