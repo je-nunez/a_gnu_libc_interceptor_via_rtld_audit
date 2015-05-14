@@ -389,7 +389,22 @@ la_x86_64_gnu_pltenter(Elf64_Sym *__sym, unsigned int __ndx,
   /* Show the caller stack */
   show_caller_stack_backtrace(__symname, __defcook, __regs);
 
-  /* TODO: Find better approximation for __framesizep, not 4KB */
+  /* TODO: Find better approximation for __framesizep for the depth of the
+   * ,     stack size used by our la_pltexit(below, "la_x86_64_gnu_pltexit()",
+   *       not 4KB. Note that this 4 KB is enough though to hold the depth of
+   *       our current "la_x86_64_gnu_pltexit()" -eg., current max local 
+   *       variable in the call-stack called by our  "la_x86_64_gnu_pltexit()"
+   *       is 
+   *            char output_buff[2048];
+   *       in print_profiling_cost_between_two_snapshots_in_time() below -which
+   *       is indirectly called by our "la_x86_64_gnu_pltexit()".
+   *       
+   *       NOTE: this parameter "__framesizep" here in "la_x86_64_gnu_pltenter()"
+   *             is used to give the trampolines in the RTLD an estimate of what
+   *             is the maximum expected stack-size to allocate for later on
+   *             calling  "la_x86_64_gnu_pltexit()".
+   */
+
   *__framesizep = 4096;
 
   /* save profiling point at the entrance into this procedure */
