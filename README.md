@@ -115,11 +115,11 @@ your package manager, eg., for RedHat and Debian:
 
         RedHat:
 
-             yum install libunwind
+             yum install libunwind libunwind-devel
 
         Debian:
 
-             apt-get install libunwind
+             apt-get install libunwind8 libunwind8-dev
 
 # Tracking Pending things
 
